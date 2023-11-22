@@ -26,4 +26,10 @@ COPY --link --from=composer /var/www/html /var/www/html
 
 RUN a2enmod rewrite
 
+RUN apt-get update && \
+    apt-get install -yq tzdata && \
+    ln -fs /usr/share/zoneinfo/Europe/Rome /etc/localtime && \
+    dpkg-reconfigure -f noninteractive tzdata \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /var/www/html/
