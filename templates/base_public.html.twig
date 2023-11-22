@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="pastel">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>{% block title %}Simple Domus{% endblock %}</title>
+    {% block stylesheets %}
+        {{ encore_entry_link_tags('app') }}
+    {% endblock %}
+
+</head>
+<body class="bg-neutral">
+{% for error in app.flashes('error') %}
+    <div class="toast toast-top toast-center">
+        <div class="alert alert-error text-center">
+            <span>{{ error }}</span>
+        </div>
+    </div>
+{% endfor %}
+
+{% block body %}{% endblock %}
+
+{% block javascripts %}
+    {{ encore_entry_script_tags('app') }}
+{% endblock %}
+</body>
+</html>

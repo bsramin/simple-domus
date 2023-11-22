@@ -1,0 +1,60 @@
+{% extends "base_public.html.twig" %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        const passwordInput = document.getElementById('password');
+        const togglePasswordButton = document.getElementById('toggle-password');
+
+        togglePasswordButton.addEventListener('click', togglePassword);
+
+        function togglePassword() {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                togglePasswordButton.textContent = 'Nascondi la password';
+            } else {
+                passwordInput.type = 'password';
+                togglePasswordButton.textContent = 'Mostra la password';
+            }
+        }
+    </script>
+{% endblock %}
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        button#toggle-password {
+            background: none;
+            border: none;
+            cursor: pointer;
+            position: absolute;
+            top: 22px;
+            right: 0;
+            font-size: 12px;
+        }
+    </style>
+{% endblock %}
+{% block body %}
+    <div class="relative flex flex-col items-center justify-center h-screen overflow-hidden">
+        <div class="w-full p-6 bg-white border-t-4 border-accent rounded-md shadow-md border-top lg:max-w-lg">
+            <h1 class="text-3xl font-semibold text-center text-gray-700">Registro Elettronico</h1>
+            <form action="" id="login-form" method="post" class="space-y-4" autocomplete="on">
+                <div>
+                    <label class="label" for="username">
+                        <span class="text-base label-text">Utente</span>
+                    </label>
+                    <input type="text" id="username" name="username" class="w-full input input-bordered" autocomplete="username" required />
+                </div>
+                <div style="position: relative;">
+                    <label class="label" for="password">
+                        <span class="text-base label-text">Password</span>
+                    </label>
+                    <input type="password" id="password" name="password" class="w-full input input-bordered" autocomplete="current-password" required />
+                    <button id="toggle-password" type="button">Mostra la password</button>
+                </div>
+                <div>
+                    <input type="submit" class="btn btn-block btn-accent" id="submit-form" value="Accedi">
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

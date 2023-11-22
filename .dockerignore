@@ -1,0 +1,14 @@
+**/node_modules
+**/Dockerfile
+.composer
+.idea
+.git
+**/dist
+**/.dockerignore
+**/*.log
+**/*.md
+.github/
+tests/
+var/
+vendor/
+.editorconfig
