@@ -2,6 +2,7 @@
   "devDependencies": {
     "autoprefixer": "^10.4.16",
     "daisyui": "^4.4.2",
+    "@tailwindcss/typography": "^0.5.10",
     "file-loader": "^6.2.0",
     "postcss": "^8.4.31",
     "postcss-loader": "^7.3.3",

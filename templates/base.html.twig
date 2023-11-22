@@ -40,8 +40,8 @@
         </div>
         {% block body %}{% endblock %}
 
-        <footer class="footer items-center p-4 bg-neutral text-neutral-content">
-            &nbsp;
+        <footer class="footer flex justify-center items-center p-4 bg-neutral text-neutral-content">
+            <a class="" href="{{ url('condizioni') }}">Termini e condizioni</a>
         </footer>
         {% block javascripts %}
             {{ encore_entry_script_tags('app') }}
