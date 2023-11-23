@@ -156,7 +156,6 @@
                             <table class="table">
                                 <thead>
                                 <tr>
-                                    <th class="w-3/12">Materia</th>
                                     <th>Compiti</th>
                                     <th class="w-2/12 text-right">Data assegnazione</th>
                                 </tr>
@@ -173,9 +172,8 @@
                                         <tr>
                                             <td>
                                                 <div class="font-bold">{{ row["subject"]["text"] }}</div>
-                                                <div class="italic text-xs">{{ row["professor"]["text"] }}</div>
-                                            </td>
-                                            <td>
+                                                <div class="italic text-xs pb-5">{{ row["professor"]["text"] }}</div>
+
                                                 {{ row["description"]["text"]|raw }}
                                                 {% if row["link"]["links"] is not empty %}
                                                     <div class="mt-5">
