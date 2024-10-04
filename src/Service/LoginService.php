@@ -46,7 +46,7 @@ class LoginService
         try {
             $session = $this->requestStack->getSession();
             $response = $this->domusClient->retrieveStudent($session->get('cookie'));
-            $studentData = $this->scrapeService->retrieveStudent($response);
+            $studentData = $this->scrapeService->retrieveStudent($response, $session->get('cookie'));
             $session->set('students', $studentData);
             return true;
         } catch (Throwable) {

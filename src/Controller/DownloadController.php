@@ -4,28 +4,26 @@ namespace App\Controller;
 
 use App\Dto\SessionDto;
 use App\Exception\DisconnectedException;
-use App\Service\AssignmentService;
 use App\Service\DocumentService;
-use App\Service\ProgramService;
-use App\Util\DateUtil;
 use App\Util\UserUtil;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Contracts\HttpClient\ResponseInterface;
 use Throwable;
 
-class DashboardController extends BaseController
+class DownloadController extends BaseController
 {
-    #[Route(path: '/dashboard', name: 'dashboard')]
-    public function dashboardPage(
+    #[Route(path: '/download', name: 'download')]
+    public function downloadLink(
         Request $request,
-        ProgramService $programService,
-        AssignmentService $assignmentService,
         DocumentService $documentService,
     ): Response
     {
-
         try {
             if (!UserUtil::isLogged($request->getSession())) {
                 throw DisconnectedException::create();
@@ -37,23 +35,10 @@ class DashboardController extends BaseController
             $sessionDto->setCookie($request->getSession()->get('cookie'));
             $sessionDto->setStudents($request->getSession()->get('students'));
 
-            $date = $request->get('data', date("Y-m-d"));
-            $dateBefore = date("Y-m-d", strtotime($date . ' -1 day'));
-            $dateAfter = date("Y-m-d", strtotime($date . ' +1 day'));
-            $programs = $programService->program($sessionDto, $date);
-            $assignments = $assignmentService->assignment($sessionDto, $date);
-            $docs = $documentService->list($sessionDto);
-
-            return $this->render('dashboard.html.twig', [
-                'today' => date("Y-m-d"),
-                'date' => DateUtil::convertToItalianDate($date),
-                'date_before' => $dateBefore,
-                'date_after' => $dateAfter,
-                'programs' => $programs,
-                'assignments' => $assignments,
-                'docs' => $docs,
-                'students' => $sessionDto->getStudents()
-            ]);
+            $doc = $documentService->download($sessionDto, $request->query->get('f'));
+            $response = new Response($doc['content']);
+            $response->headers->set('Content-Disposition', $doc["disposition"]);
+            return $response;
         } catch (Throwable $t) {
             $this->addFlash('error', $t->getMessage());
             $request->getSession()->clear();

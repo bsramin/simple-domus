@@ -1,21 +1,30 @@
 <?php
 
 namespace App\Service;
+use App\Client\DomusClient;
+use App\Interface\ClientInterface;
 use App\Util\StringUtil;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\HttpFoundation\Cookie;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 use Throwable;
 
 class ScrapeService
 {
+    /**
+     * @param DomusClient $domusClient
+     */
+    public function __construct(private readonly ClientInterface $domusClient) {}
+
     public function login(ResponseInterface $response): false|array
     {
         try {
             $html = $response->getContent();
             $crawler = new Crawler($html);
             try {
-                $isLogged = ('La login utente oppure la password non sono corretti.' !== $crawler->filterXPath("//p[contains(text(),'La login utente oppure la password non sono corretti.')]")->text());
-            } catch (Throwable) {
+                $isLogged = ('La login utente oppure la password non sono corretti.' !== $crawler->filterXPath("//*[contains(text(),'La login utente oppure la password non sono corretti.')]")->text());
+            } catch (Throwable $e) {
                 $isLogged = true;
             }
 
@@ -23,8 +32,8 @@ class ScrapeService
                 $csrfToken = $crawler->filterXPath("//meta[@name='csrf-token']")->attr("content");
                 $csrfParam = $crawler->filterXPath("//meta[@name='csrf-param']")->attr("content");
 
-                $headers = $response->getHeaders();
-                $cookie = $headers["set-cookie"][0];
+                $headers = $response->getInfo();
+                $cookie = Cookie::fromString(str_replace('Set-Cookie: ', '', $headers["response_headers"][10]));
                 return [
                     'csrf' => [
                         'param' => $csrfParam,
@@ -35,25 +44,39 @@ class ScrapeService
             }
 
             return false;
-        } catch (Throwable) {
+        } catch (Throwable $e) {
             return false;
         }
     }
 
-    public function retrieveStudent(ResponseInterface $response): false|array
+    public function retrieveStudent(ResponseInterface $response, $cookie): false|array
     {
         try {
             $html = $response->getContent();
             $crawler = new Crawler($html);
 
-            $studentsLink = $crawler->filterXPath("//a[@class='large_menu_button']");
+            $studentsLink = $crawler->filterXPath("//body//div[@class='x_panel']/div/a");
             $studentData = [];
             foreach ($studentsLink as $node) {
-                $studentData[explode("/", $node->getAttribute('href'))[3]] = StringUtil::extractStudentName($node->nodeValue);
+                $idStudent = explode("/", $node->getAttribute('href'))[3];
+                if ($this->checkStudent($idStudent, $cookie)) {
+                    $studentData[$idStudent] = StringUtil::extractStudentName($node->nodeValue);
+                }
             }
             return $studentData;
 
         } catch (Throwable) {
+            return false;
+        }
+    }
+
+    private function checkStudent($idStudent, $cookie): bool
+    {
+        try {
+            $response = $this->domusClient->checkStudent($idStudent, $cookie);
+            $statusCode = $response->getStatusCode();
+            return $statusCode === Response::HTTP_OK;
+        } catch (Throwable $e) {
             return false;
         }
     }
@@ -78,7 +101,7 @@ class ScrapeService
 
             $array = [];
             $crawler = new Crawler($htmlContent);
-            $crawler->filterXPath('//table[contains(@class, "formatted")]/tbody/tr')->each(function (Crawler $rowNode) use (&$array) {
+            $crawler->filterXPath('//table[@id="programma_table"]/tbody/tr')->each(function (Crawler $rowNode) use (&$array) {
                 $rowData = [];
                 $p = 0;
                 // XPath expression to select all cell elements in the row
@@ -134,7 +157,7 @@ class ScrapeService
 
             $array = [];
             $crawler = new Crawler($htmlContent);
-            $crawler->filterXPath('//table[contains(@class, "formatted")]/tbody/tr')->each(function (Crawler $rowNode) use (&$array) {
+            $crawler->filterXPath('//table[@id="compiti_data_table"]/tbody/tr')->each(function (Crawler $rowNode) use (&$array) {
                 $rowData = [];
                 // XPath expression to select all cell elements in the row
                 $i = 0;
@@ -156,13 +179,13 @@ class ScrapeService
 
                     $label = match ($i) {
                         0 => 'delivery',
-                        1 => 'subject',
-                        2 => 'date',
+                        1 => 'date',
+                        2 => 'subject',
                         3 => 'professor',
                         4 => 'description',
                         5 => 'link',
                     };
-                    if ($i === 2) {
+                    if ($i === 1) {
                         $tmp = explode(" ", $cellText);
                         unset($cellText);
                         $cellText[0] = $tmp[0];
@@ -178,7 +201,46 @@ class ScrapeService
                 "table" => $array,
                 "date" => $value
             ];
-        } catch (Throwable) {
+        } catch (Throwable $t) {
+            return false;
+        }
+    }
+
+    public function document(ResponseInterface $response, bool $all): false|array
+    {
+        try {
+            $array = [];
+            $html = $response->getContent();
+            $crawler = new Crawler($html);
+            $crawler->filterXPath('//table[@id="moduli_table"]/tbody/tr')->each(function (Crawler $rowNode) use (&$array) {
+                $rowData = [];
+                // XPath expression to select all cell elements in the row
+                $i = 0;
+                $rowNode->filterXPath('//td')->each(function (Crawler $cellNode) use (&$rowData, &$i) {
+
+                    $cellText = trim($cellNode->text());
+                    // Extracting links if present
+                    $links = $cellNode->filterXPath('.//a')->each(function (Crawler $link) {
+                        return $link->attr('href');
+                    });
+
+                    $label = match ($i) {
+                        0 => 'description',
+                        1 => 'date_from',
+                        2 => 'date_to',
+                        3 => 'link',
+                    };
+
+                    $rowData[$label] = ['text' => $cellText, 'links' => $links];
+                    $i++;
+                });
+                $array[] = $rowData;
+            });
+
+            return [
+                "table" => $array,
+            ];
+        } catch (Throwable $t) {
             return false;
         }
     }

@@ -1,8 +1,8 @@
 {
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.10",
     "autoprefixer": "^10.4.16",
     "daisyui": "^4.4.2",
-    "@tailwindcss/typography": "^0.5.10",
     "file-loader": "^6.2.0",
     "postcss": "^8.4.31",
     "postcss-loader": "^7.3.3",
@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@symfony/webpack-encore": "^4.5.0",
-    "flowbite-datepicker": "^1.2.4"
+    "flowbite-datepicker": "^1.2.4",
+    "tailwindcss-displaymodes": "^1.0.8"
   },
   "license": "UNLICENSED",
   "private": true,

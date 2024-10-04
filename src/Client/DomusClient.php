@@ -60,6 +60,24 @@ readonly class DomusClient implements ClientInterface
         }
     }
 
+    public function checkStudent($idStudent, $cookie): ResponseInterface
+    {
+        try {
+            return $this->domusClient->request(
+                method: 'GET',
+                url: '/ref_compiti/visualizza/'.$idStudent,
+                options: [
+                    'max_redirects' => 0,
+                    'headers' => [
+                        'Cookie' => $cookie
+                    ]
+                ]
+            );
+        } catch (Throwable $t) {
+            throw GenericException::create($t->getMessage());
+        }
+    }
+
     /**
      * @return ResponseInterface[]
      * @throws GenericException
@@ -129,6 +147,61 @@ readonly class DomusClient implements ClientInterface
                 }
             }
             return $assignment;
+        } catch (Throwable $t) {
+            throw GenericException::create($t->getMessage());
+        }
+    }
+
+    /**
+     * @throws GenericException
+     */
+    public function document(SessionDto $sessionDto): array
+    {
+        try {
+            $docs = [];
+            foreach ($sessionDto->getStudents() AS $studentId => $studentName) {
+                $docs[$studentId] = $this->domusClient->request(
+                    method: 'GET',
+                    url: '/ref_moduli/lista_moduli/' . $studentId,
+                    options: [
+                        'headers' => [
+                            'Cookie' => $sessionDto->getCookie()
+                        ]
+                    ]
+                );
+            }
+
+            return $docs;
+        } catch (Throwable $t) {
+            throw GenericException::create($t->getMessage());
+        }
+    }
+
+    /**
+     * @throws GenericException
+     */
+    public function downloadDocument(SessionDto $sessionDto, string $documentPath): ResponseInterface
+    {
+        try {
+            $response = $this->domusClient->request(
+                method: 'GET',
+                url: $documentPath,
+                options: [
+                    'headers' => [
+                        'Cookie' => $sessionDto->getCookie()
+                    ],
+                    'body' => [
+                        $sessionDto->getParam() => $sessionDto->getToken(),
+                    ],
+                ]
+            );
+
+            /* the session cookie has expired */
+            if ($response->getContent() === "window.location = 'https://webscuola.scuolabraschi.it/';") {
+                throw DisconnectedException::create();
+            }
+
+            return $response;
         } catch (Throwable $t) {
             throw GenericException::create($t->getMessage());
         }
