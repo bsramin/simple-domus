@@ -234,7 +234,9 @@ class ScrapeService
                     $rowData[$label] = ['text' => $cellText, 'links' => $links];
                     $i++;
                 });
-                $array[] = $rowData;
+                $pathPart = explode('/', $rowData['link']['links'][0]);
+                $idDoc = end($pathPart);
+                $array[$idDoc] = $rowData;
             });
 
             return [

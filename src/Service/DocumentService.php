@@ -29,10 +29,11 @@ class DocumentService
     public function list(SessionDto $sessionDto): array
     {
         $docs = $this->domusClient->document($sessionDto);
-        foreach ($docs AS $studentId => $doc) {
-            $docs[$studentId] = $this->scrapeService->document($doc, $all = false);
+        $resultDocs = [];
+        foreach ($docs AS $doc) {
+            $resultDocs = array_merge($resultDocs, $this->scrapeService->document($doc, $all = false));
         }
-        return $docs;
+        return $resultDocs;
     }
 
     /**
