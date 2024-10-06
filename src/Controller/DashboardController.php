@@ -60,4 +60,46 @@ class DashboardController extends BaseController
             return new RedirectResponse($this->generateUrl('login'));
         }
     }
+
+    #[Route(path: '/registro/{date}', name: 'registro')]
+    public function registroXHR(
+        string $date,
+        Request $request,
+        ProgramService $programService,
+        AssignmentService $assignmentService,
+        DocumentService $documentService,
+    ): Response
+    {
+
+        try {
+            if (!UserUtil::isLogged($request->getSession())) {
+                throw DisconnectedException::create();
+            }
+
+            $sessionDto = new SessionDto();
+            $sessionDto->setParam($request->getSession()->get('csrf-param'));
+            $sessionDto->setToken($request->getSession()->get('csrf-token'));
+            $sessionDto->setCookie($request->getSession()->get('cookie'));
+            $sessionDto->setStudents($request->getSession()->get('students'));
+
+            $dateBefore = date("Y-m-d", strtotime($date . ' -1 day'));
+            $dateAfter = date("Y-m-d", strtotime($date . ' +1 day'));
+            $programs = $programService->program($sessionDto, $date);
+            $assignments = $assignmentService->assignment($sessionDto, $date);
+
+            return $this->render('partial/registro.html.twig', [
+                'today' => date("Y-m-d"),
+                'date_before' => $dateBefore,
+                'date_after' => $dateAfter,
+                'date' => DateUtil::convertToItalianDate($date),
+                'programs' => $programs,
+                'assignments' => $assignments,
+                'students' => $sessionDto->getStudents()
+            ]);
+        } catch (Throwable $t) {
+            $this->addFlash('error', $t->getMessage());
+            $request->getSession()->clear();
+            return new RedirectResponse($this->generateUrl('login'));
+        }
+    }
 }
